@@ -59,7 +59,7 @@ export const CollectionsPage = () => <><PageIntro eyebrow="Little worlds to wear
 
 export const SearchPage = () => {
   const [location] = useLocation();
-  const initial = new URLSearchParams(location.split('?')[1] || '').get('q') || '';
+  const initial = new URLSearchParams(window.location.search).get('q') || '';
   const [query, setQuery] = useState(initial);
   const results = products.filter((product) => `${product.name} ${product.category} ${product.color}`.toLowerCase().includes(query.toLowerCase()));
   return <><PageIntro eyebrow="Search the moon" title={query ? `Results for “${query}”` : 'What are you looking for?'} body="Try a colour, a feeling, or a piece you want to live in." /><div className="mm-container"><div className="mm-search-wrap" style={{ width: '100%', marginBottom: '2.4rem' }}><SearchIcon size={16} /><input className="mm-input" autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try “rose”, “knit”, or “dress”" aria-label="Search all products" data-testid="input-search-page" /></div>{results.length ? <ProductGrid items={results} /> : <EmptyState title="Nothing under that moon" body="No exact matches yet, but there are plenty of lovely things to discover." />}</div></>;
@@ -117,7 +117,7 @@ export const CheckoutPage = () => {
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const applyPromo = () => { if (promo.trim().toUpperCase() === 'LUNA15') { setDiscount(subtotal * .15); notify('Moon code applied — 15% off', 'success'); } else notify('Try the code LUNA15', 'error'); };
   useEffect(() => {
-    if (new URLSearchParams(location.split('?')[1] || '').get('cancelled') === '1') {
+    if (new URLSearchParams(window.location.search).get('cancelled') === '1') {
       notify('Payment was cancelled. Your bag is still waiting for you.', 'error');
     }
   }, [location, notify]);
@@ -147,34 +147,53 @@ export const CheckoutPage = () => {
 };
 
 export const ConfirmationPage = () => {
-  const [location] = useLocation();
   const { clearCart } = useStore();
-  const sessionId = new URLSearchParams(location.split('?')[1] || '').get('session_id');
+  const sessionId = new URLSearchParams(window.location.search).get('session_id');
   const [order, setOrder] = useState<CheckoutStatus | null>(null);
   const [loading, setLoading] = useState(Boolean(sessionId));
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!sessionId) return;
     let active = true;
-    getCheckoutSession(sessionId)
-      .then((result) => {
+    let timer: number | undefined;
+    let attempts = 0;
+    const checkPayment = async () => {
+      attempts += 1;
+      try {
+        const result = await getCheckoutSession(sessionId);
         if (!active) return;
-        setOrder(result);
-        setLoading(false);
-        if (result.paymentStatus === 'paid' || result.paymentStatus === 'no_payment_required') {
+        const isPaid = result.paymentStatus === 'paid' || result.paymentStatus === 'no_payment_required';
+        if (isPaid) {
+          setOrder(result);
+          setLoading(false);
           clearCart();
           sessionStorage.setItem('luna-belle-order', JSON.stringify(result));
+          return;
         }
-      })
-      .catch(() => {
+        if (attempts < 15) {
+          timer = window.setTimeout(checkPayment, 1000);
+          return;
+        }
+        setOrder(result);
+        setLoading(false);
+      } catch {
         if (!active) return;
+        if (attempts < 5) {
+          timer = window.setTimeout(checkPayment, 1200);
+          return;
+        }
         setFailed(true);
         setLoading(false);
-      });
-    return () => { active = false; };
+      }
+    };
+    void checkPayment();
+    return () => {
+      active = false;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [sessionId, clearCart]);
   if (loading) return <div className="mm-container mm-page"><div className="mm-order-confirmed"><div className="mm-confirm-mark"><ShieldCheck size={32} /></div><h1>Confirming your moonlit order…</h1><p>Stripe is securely confirming your payment.</p></div></div>;
   if (failed) return <div className="mm-container mm-page"><ErrorState retry={() => window.location.reload()} /></div>;
   const paid = order?.paymentStatus === 'paid' || order?.paymentStatus === 'no_payment_required';
-  return <div className="mm-container mm-page">{paid && order ? <div className="mm-order-confirmed mm-reveal"><div className="mm-confirm-mark"><Check size={34} /></div><div className="mm-eyebrow">The nicest kind of news</div><h1>It's on its way, {order.customerName.split(' ')[0]}.</h1><p>Thank you for choosing a little magic. Your order <strong>{order.orderNumber}</strong> is tucked away and we’ll send a note when it begins its journey. Total: <strong>{new Intl.NumberFormat('en-US', { style: 'currency', currency: order.currency.toUpperCase() }).format(order.amountTotal / 100)}</strong>.</p><Link href="/shop" className="mm-button mm-button-primary" data-testid="link-confirmation-shop">Keep exploring <ArrowRight size={16} /></Link></div> : <EmptyState title="No confirmed order here yet" body="Once Stripe confirms your payment, its happy ending will appear here." />}</div>;
+  return <div className="mm-container mm-page">{paid && order ? <div className="mm-order-confirmed mm-reveal"><div className="mm-confirm-mark"><Check size={34} /></div><div className="mm-eyebrow">The nicest kind of news</div><h1>It's on its way, {order.customerName.split(' ')[0]}.</h1><p>Thank you for choosing a little magic. Your order <strong>{order.orderNumber}</strong> is tucked away and we’ll send a note when it begins its journey. Total: <strong>{new Intl.NumberFormat('en-US', { style: 'currency', currency: order.currency.toUpperCase() }).format(order.amountTotal / 100)}</strong>.</p><Link href="/shop" className="mm-button mm-button-primary" data-testid="link-confirmation-shop">Keep exploring <ArrowRight size={16} /></Link></div> : sessionId && order ? <div className="mm-order-confirmed"><div className="mm-confirm-mark"><ShieldCheck size={32} /></div><h1>Your payment is still being confirmed.</h1><p>Please wait a moment, then check again. Your bag has been kept safe.</p><button className="mm-button mm-button-primary" type="button" onClick={() => window.location.reload()}>Check payment again</button></div> : <EmptyState title="No confirmed order here yet" body="Once Stripe confirms your payment, its happy ending will appear here." />}</div>;
 };
