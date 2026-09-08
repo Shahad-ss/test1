@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Mimi & Moon Store"
+description = "A responsive women’s clothing storefront for Mimi & Moon with dreamy product discovery, favorites, persistent cart, and a complete checkout journey."
+version = "1.0.0"
+id = "artifacts/mimi-moon-store"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23641
+
+[services.development]
+run = "pnpm --filter @workspace/mimi-moon-store run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mimi-moon-store", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mimi-moon-store/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23641"
+BASE_PATH = "/"

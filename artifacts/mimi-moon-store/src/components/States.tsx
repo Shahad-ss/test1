@@ -1,0 +1,6 @@
+import { AlertCircle, Moon, Sparkles } from 'lucide-react';
+import { Link } from 'wouter';
+
+export const LoadingGrid = () => <div className="mm-loading-grid" aria-label="Loading products" data-testid="status-loading-products">{Array.from({ length: 8 }).map((_, index) => <div key={index}><div className="mm-skeleton" /><div className="mm-skeleton mm-skeleton-line" /></div>)}</div>;
+export const EmptyState = ({ title, body, action = 'Browse the collection', href = '/shop' }: { title: string; body: string; action?: string; href?: string }) => <div className="mm-empty" data-testid="status-empty"><div className="mm-empty-illustration"><Moon size={42} strokeWidth={1.3} /></div><h2>{title}</h2><p>{body}</p><Link href={href} className="mm-button mm-button-primary" data-testid="link-empty-action">{action}</Link></div>;
+export const ErrorState = ({ retry }: { retry: () => void }) => <div className="mm-empty" data-testid="status-error"><div className="mm-empty-illustration"><AlertCircle size={42} strokeWidth={1.3} /></div><h2>That little cloud got in the way</h2><p>We couldn't bring this page together just now. A fresh try usually does the trick.</p><button className="mm-button mm-button-primary" onClick={retry} data-testid="button-retry"><Sparkles size={16} /> Try again</button></div>;
