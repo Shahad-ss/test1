@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CartItem } from '@/lib/catalog';
 
-const CART_KEY = 'mimi-moon-cart';
-const WISHLIST_KEY = 'mimi-moon-wishlist';
+const CART_KEY = 'luna-belle-cart';
+const WISHLIST_KEY = 'luna-belle-wishlist';
+const LEGACY_CART_KEY = 'mimi-moon-cart';
+const LEGACY_WISHLIST_KEY = 'mimi-moon-wishlist';
 
-const read = <T,>(key: string, fallback: T): T => {
+const read = <T,>(key: string, fallback: T, legacyKey?: string): T => {
   try {
-    const value = localStorage.getItem(key);
+    const value = localStorage.getItem(key) ?? (legacyKey ? localStorage.getItem(legacyKey) : null);
     return value ? JSON.parse(value) as T : fallback;
   } catch {
     return fallback;
@@ -14,8 +16,8 @@ const read = <T,>(key: string, fallback: T): T => {
 };
 
 const createStore = () => {
-  const [cart, setCart] = useState<CartItem[]>(() => read<CartItem[]>(CART_KEY, []));
-  const [wishlist, setWishlist] = useState<string[]>(() => read<string[]>(WISHLIST_KEY, []));
+  const [cart, setCart] = useState<CartItem[]>(() => read<CartItem[]>(CART_KEY, [], LEGACY_CART_KEY));
+  const [wishlist, setWishlist] = useState<string[]>(() => read<string[]>(WISHLIST_KEY, [], LEGACY_WISHLIST_KEY));
 
   useEffect(() => { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart]);
   useEffect(() => { localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)); }, [wishlist]);

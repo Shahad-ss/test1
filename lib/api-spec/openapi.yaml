@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: checkout
+    description: Stripe checkout operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /checkout/session:
+    post:
+      operationId: createCheckoutSession
+      tags: [checkout]
+      summary: Create a Stripe Checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "200":
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "400":
+          description: Invalid checkout request
+  /checkout/session/{sessionId}:
+    get:
+      operationId: getCheckoutSession
+      tags: [checkout]
+      summary: Read the payment status for a checkout session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Checkout session status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutStatus"
+        "404":
+          description: Checkout session not found
 components:
   schemas:
     HealthStatus:
@@ -33,4 +76,69 @@ components:
           type: string
       required:
         - status
+    CheckoutLine:
+      type: object
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        size:
+          type: string
+        color:
+          type: string
+      required: [productId, quantity, size, color]
+    CheckoutCustomer:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+      required: [firstName, lastName, email]
+    CheckoutInput:
+      type: object
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/CheckoutLine"
+        customer:
+          $ref: "#/components/schemas/CheckoutCustomer"
+        promoCode:
+          type: string
+      required: [items, customer]
+    CheckoutSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        url:
+          type: string
+          format: uri
+      required: [sessionId, url]
+    CheckoutStatus:
+      type: object
+      properties:
+        paymentStatus:
+          type: string
+          enum: [paid, unpaid, no_payment_required]
+        customerName:
+          type: string
+        amountTotal:
+          type: integer
+        currency:
+          type: string
+        orderNumber:
+          type: string
+      required: [paymentStatus, customerName, amountTotal, currency, orderNumber]
 

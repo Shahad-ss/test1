@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Check, ChevronLeft, Heart, Minus, Plus, Search as SearchIcon, Sparkles, Trash2, Truck } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, Heart, Minus, Plus, Search as SearchIcon, ShieldCheck, Sparkles, Trash2, Truck } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
+import { createCheckoutSession, getCheckoutSession, type CheckoutStatus } from '@workspace/api-client-react';
 import { categories, getProduct, products, type Product } from '@/lib/catalog';
 import { useStore } from '@/hooks/useStore';
 import { useToast } from '@/components/toast';
@@ -18,7 +19,7 @@ export const HomePage = () => {
     event.preventDefault();
     if (!email.includes('@')) { notify('Please add a real email address', 'error'); return; }
     setLoading(true);
-    window.setTimeout(() => { localStorage.setItem('mimi-newsletter', email); setLoading(false); setEmail(''); notify('You are on the list. A little magic is on its way.', 'success'); }, 550);
+    window.setTimeout(() => { localStorage.setItem('luna-belle-newsletter', email); setLoading(false); setEmail(''); notify('You are on the list. A little magic is on its way.', 'success'); }, 550);
   };
   const featured = products.slice(0, 4);
   return <>
@@ -26,12 +27,12 @@ export const HomePage = () => {
       <div className="mm-cloud cloud-one" /><div className="mm-cloud cloud-two" />
       <div className="mm-container mm-hero-inner">
         <div className="mm-hero-copy mm-reveal"><div className="mm-eyebrow">A little wonder, well worn</div><h1>Dress for the softest <em>days.</em></h1><p>Pretty things for everyday adventures, designed in small batches and made to stay in your story.</p><Link href="/shop" className="mm-button mm-button-primary" data-testid="link-hero-shop">Shop the new edit <ArrowRight size={16} /></Link></div>
-        <div className="mm-hero-art" aria-label="Illustration of a rose dress"><Star className="sparkle-one" /><Star className="sparkle-two" /><Star className="sparkle-three" /><div className="mm-hero-dress" /></div>
+        <div className="mm-hero-art"><Star className="sparkle-one" /><Star className="sparkle-two" /><Star className="sparkle-three" /><img className="mm-hero-photo" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1400&q=90" alt="Luna Belle rose dress editorial" /></div>
       </div>
     </section>
     <div className="mm-feature-band"><div className="mm-container mm-feature-grid"><div className="mm-feature"><span className="mm-feature-icon"><Heart size={16} /></span>Thoughtful, easy silhouettes</div><div className="mm-feature"><span className="mm-feature-icon"><Sparkles size={16} /></span>Small-batch, never ordinary</div><div className="mm-feature"><span className="mm-feature-icon"><Truck size={16} /></span>Free shipping over $120</div></div></div>
     <section className="mm-container mm-section"><div className="mm-section-heading"><div><div className="mm-eyebrow">Just in from the moon</div><h2>The new little things</h2></div><Link href="/shop" className="mm-text-link" data-testid="link-home-view-all">View all pieces <ArrowRight size={14} /></Link></div><ProductGrid items={featured} /></section>
-    <section className="mm-container mm-section"><div className="mm-story"><div className="mm-story-art"><MoonFlower /></div><div className="mm-story-copy"><div className="mm-eyebrow">Our north star</div><h2>Clothes with a bit of story in them.</h2><p>Mimi &amp; Moon began with a sketchbook, a cup of tea, and a belief that getting dressed can change the weather inside your day. We make the pieces we want to reach for again and again: soft, considered, and a little bit unexpected.</p><Link href="/about" className="mm-text-link" data-testid="link-home-story">Meet Mimi &amp; Moon <ArrowRight size={14} /></Link></div></div></section>
+    <section className="mm-container mm-section"><div className="mm-story"><div className="mm-story-art"><MoonFlower /></div><div className="mm-story-copy"><div className="mm-eyebrow">Our north star</div><h2>Clothes with a bit of story in them.</h2><p>Luna Belle began with a sketchbook, a cup of tea, and a belief that getting dressed can change the weather inside your day. We make the pieces we want to reach for again and again: soft, considered, and a little bit unexpected.</p><Link href="/about" className="mm-text-link" data-testid="link-home-story">Meet Luna Belle <ArrowRight size={14} /></Link></div></div></section>
     <section className="mm-container mm-section"><div className="mm-newsletter"><div><div className="mm-eyebrow" style={{ color: 'hsl(var(--accent))' }}>Letters from the moon</div><h2>Come along for the pretty bits.</h2><p>New drops, studio notes, and first dibs on the good stuff. No noise, just nice things.</p></div><form className="mm-news-form" onSubmit={submitNews}><input className="mm-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Your email address" aria-label="Email address" data-testid="input-newsletter-email" /><button className="mm-button mm-button-pink" disabled={loading} data-testid="button-newsletter-submit">{loading ? 'Joining…' : 'Join us'}</button></form></div></section>
   </>;
 };
@@ -80,7 +81,7 @@ export const CartPage = () => {
   const [discount, setDiscount] = useState(0);
   const subtotal = cart.reduce((sum, item) => sum + (getProduct(item.productId)?.price || 0) * item.quantity, 0);
   const shipping = subtotal >= 120 || subtotal === 0 ? 0 : 8;
-  const applyPromo = () => { if (promo.trim().toUpperCase() === 'MIMI15') { setDiscount(subtotal * .15); notify('Moon code applied — 15% off your bundle', 'success'); } else notify('That code is sleeping. Try MIMI15', 'error'); };
+  const applyPromo = () => { if (promo.trim().toUpperCase() === 'LUNA15') { setDiscount(subtotal * .15); notify('Moon code applied — 15% off your bundle', 'success'); } else notify('That code is sleeping. Try LUNA15', 'error'); };
   return <><PageIntro eyebrow="Your bag" title="A little bundle of joy." body="Review your pieces, make them yours, and get ready for a very nice unboxing." /><div className="mm-container mm-cart-layout">{cart.length ? <div>{cart.map((item, index) => { const product = getProduct(item.productId); if (!product) return null; return <div className="mm-cart-item" key={`${item.productId}-${item.size}-${item.color}`}><img src={product.art} alt={product.artAlt} /><div><Link href={`/product/${product.id}`} data-testid={`link-cart-product-${product.id}`}><h3>{product.name}</h3></Link><div className="mm-cart-meta">{item.color} · {item.size}</div><div style={{ marginTop: '.7rem' }} className="mm-quantity"><button onClick={() => updateQuantity(index, item.quantity - 1)} aria-label="Decrease quantity" data-testid={`button-decrease-${product.id}`}><Minus size={13} /></button><span data-testid={`text-quantity-${product.id}`}>{item.quantity}</span><button onClick={() => updateQuantity(index, item.quantity + 1)} aria-label="Increase quantity" data-testid={`button-increase-${product.id}`}><Plus size={13} /></button></div><br /><button className="mm-remove" onClick={() => setRemoveIndex(index)} data-testid={`button-remove-${product.id}`}><Trash2 size={13} /> Remove</button></div><div className="mm-cart-price">${(product.price * item.quantity).toFixed(2)}</div></div>; })}<Link href="/shop" className="mm-text-link" style={{ display: 'inline-block', marginTop: '1.5rem' }} data-testid="link-continue-shopping"><ChevronLeft size={14} /> Keep browsing</Link></div> : <EmptyState title="Your bag is moon-empty" body="A good outfit may be just around the corner. Let's go look." action="Shop the pieces" />}{cart.length > 0 && <Summary subtotal={subtotal} discount={discount} shipping={shipping} promo={promo} setPromo={setPromo} applyPromo={applyPromo} />}</div>{removeIndex !== null && <div className="mm-dialog-backdrop" role="dialog" aria-modal="true"><div className="mm-dialog"><h2>Let this one go?</h2><p>It will leave your bag, but you can always find it again in the collection.</p><div className="mm-dialog-actions"><button className="mm-button mm-button-cream" onClick={() => setRemoveIndex(null)} data-testid="button-cancel-remove">Keep it</button><button className="mm-button mm-button-primary" onClick={() => { removeFromCart(removeIndex); setRemoveIndex(null); notify('Piece removed from your bag'); }} data-testid="button-confirm-remove">Remove</button></div></div></div>}</>;
 };
 
@@ -100,40 +101,80 @@ export const ProductPage = () => {
 
 const ShoppingBagIcon = () => <span aria-hidden="true">+</span>;
 
-export const AboutPage = () => <div className="mm-container mm-page"><section className="mm-about-hero"><div className="mm-eyebrow">The Mimi &amp; Moon story</div><h1>For the days you wish would last a little longer.</h1><p>We make clothes for the in-between moments: first coffees, long walks, dinner that becomes dessert.</p><CloudLine /></section><div className="mm-about-layout"><h2>A boutique with its head in the clouds.</h2><p>Mimi &amp; Moon is an independent womenswear label with a soft spot for beautiful details. We started small, sketching pieces that felt polished enough for plans but comfortable enough for staying in. Every collection is a gentle invitation to dress like yourself, only a little more joyfully.</p><p>Our clothes are designed in Copenhagen and made in small runs with partners we know by name. We choose considered fabrics, keep our drops intentionally little, and believe the best pieces are the ones that become part of your personal mythology.</p><div className="mm-values"><div className="mm-value"><MoonFlower /><h3>Soft but certain</h3><p>Feminine silhouettes with enough ease to move through real life.</p></div><div className="mm-value"><Star /><h3>Small on purpose</h3><p>Limited runs keep the collection feeling special and the waste low.</p></div><div className="mm-value"><Heart /><h3>Made to be kept</h3><p>Details you notice today, quality you appreciate years from now.</p></div></div></div></div>;
+export const AboutPage = () => <div className="mm-container mm-page"><section className="mm-about-hero"><div className="mm-eyebrow">The Luna Belle story</div><h1>For the days you wish would last a little longer.</h1><p>We make clothes for the in-between moments: first coffees, long walks, dinner that becomes dessert.</p><CloudLine /></section><div className="mm-about-layout"><h2>A boutique with its head in the clouds.</h2><p>Luna Belle is an independent womenswear label with a soft spot for beautiful details. We started small, sketching pieces that felt polished enough for plans but comfortable enough for staying in. Every collection is a gentle invitation to dress like yourself, only a little more joyfully.</p><p>Our clothes are designed in Copenhagen and made in small runs with partners we know by name. We choose considered fabrics, keep our drops intentionally little, and believe the best pieces are the ones that become part of your personal mythology.</p><div className="mm-values"><div className="mm-value"><MoonFlower /><h3>Soft but certain</h3><p>Feminine silhouettes with enough ease to move through real life.</p></div><div className="mm-value"><Star /><h3>Small on purpose</h3><p>Limited runs keep the collection feeling special and the waste low.</p></div><div className="mm-value"><Heart /><h3>Made to be kept</h3><p>Details you notice today, quality you appreciate years from now.</p></div></div></div></div>;
 
 export const CheckoutPage = () => {
-  const { cart, clearCart } = useStore();
+  const { cart } = useStore();
   const { notify } = useToast();
-  const [, setLocation] = useLocation();
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', address: '', city: '', postal: '', card: '' });
+  const [location] = useLocation();
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '' });
   const [promo, setPromo] = useState('');
   const [discount, setDiscount] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [processing, setProcessing] = useState(false);
   const subtotal = cart.reduce((sum, item) => sum + (getProduct(item.productId)?.price || 0) * item.quantity, 0);
   const shipping = subtotal >= 120 ? 0 : 8;
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const applyPromo = () => { if (promo.trim().toUpperCase() === 'MIMI15') { setDiscount(subtotal * .15); notify('Moon code applied — 15% off', 'success'); } else notify('Try the code MIMI15', 'error'); };
-  const submit = (event: React.FormEvent) => {
+  const applyPromo = () => { if (promo.trim().toUpperCase() === 'LUNA15') { setDiscount(subtotal * .15); notify('Moon code applied — 15% off', 'success'); } else notify('Try the code LUNA15', 'error'); };
+  useEffect(() => {
+    if (new URLSearchParams(location.split('?')[1] || '').get('cancelled') === '1') {
+      notify('Payment was cancelled. Your bag is still waiting for you.', 'error');
+    }
+  }, [location, notify]);
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!cart.length) { notify('Your bag is empty — add a piece before checking out', 'error'); return; }
-    const required: Array<keyof typeof form> = ['firstName', 'lastName', 'email', 'address', 'city', 'postal', 'card'];
+    const required: Array<keyof typeof form> = ['firstName', 'lastName', 'email'];
     const next = Object.fromEntries(required.filter((key) => !form[key].trim()).map((key) => [key, 'Please fill this in'])) as Record<string, string>;
     if (form.email && !form.email.includes('@')) next.email = 'Please check your email';
-    if (form.card && form.card.replaceAll(' ', '').length < 12) next.card = 'Please enter a valid card number';
     setErrors(next);
     if (Object.keys(next).length) { notify('A couple of details need your attention', 'error'); return; }
-    sessionStorage.setItem('mimi-order', JSON.stringify({ name: form.firstName, total: subtotal - discount + shipping, number: `MM-${Date.now().toString().slice(-6)}` }));
-    clearCart();
-    setLocation('/order-confirmation');
+    setProcessing(true);
+    try {
+      const session = await createCheckoutSession({
+        items: cart,
+        customer: form,
+        promoCode: discount > 0 ? 'LUNA15' : undefined,
+      });
+      window.location.assign(session.url);
+    } catch {
+      setProcessing(false);
+      notify('Secure checkout could not start. Please try again.', 'error');
+    }
   };
   if (!cart.length) return <div className="mm-container mm-page"><EmptyState title="Nothing to check out yet" body="Your order summary will appear here once you find something to love." action="Browse the shop" /></div>;
-  return <><PageIntro eyebrow="Almost yours" title="Checkout" body="Just a few details and your little bundle will be on its way." /><div className="mm-container mm-checkout-layout"><form className="mm-checkout-form" onSubmit={submit}><h2>Delivery details</h2><div className="mm-form-grid">{[['firstName', 'First name'], ['lastName', 'Last name'], ['email', 'Email address'], ['address', 'Address'], ['city', 'City'], ['postal', 'Postcode'], ['card', 'Card number']].map(([key, label], index) => <label className={`mm-label ${key === 'address' || key === 'card' ? 'mm-form-full' : ''}`} key={key}>{label}<input className="mm-input" value={form[key as keyof typeof form]} onChange={(event) => update(key as keyof typeof form, event.target.value)} placeholder={key === 'card' ? '1234 5678 9012 3456' : ''} data-testid={`input-checkout-${key}`} />{errors[key] && <span className="mm-field-error">{errors[key]}</span>}</label>)}</div><button className="mm-button mm-button-primary" style={{ width: '100%', marginTop: '1.5rem' }} type="submit" data-testid="button-place-order">Place my order <ArrowRight size={16} /></button></form><Summary subtotal={subtotal} discount={discount} shipping={shipping} promo={promo} setPromo={setPromo} applyPromo={applyPromo} /></div></>;
+  return <><PageIntro eyebrow="Almost yours" title="Checkout" body="Share your details, then finish securely with Stripe." /><div className="mm-container mm-checkout-layout"><form className="mm-checkout-form" onSubmit={submit}><h2>Contact details</h2><div className="mm-form-grid">{[['firstName', 'First name'], ['lastName', 'Last name'], ['email', 'Email address']].map(([key, label]) => <label className={`mm-label ${key === 'email' ? 'mm-form-full' : ''}`} key={key}>{label}<input className="mm-input" type={key === 'email' ? 'email' : 'text'} autoComplete={key === 'email' ? 'email' : key === 'firstName' ? 'given-name' : 'family-name'} value={form[key as keyof typeof form]} onChange={(event) => update(key as keyof typeof form, event.target.value)} data-testid={`input-checkout-${key}`} />{errors[key] && <span className="mm-field-error">{errors[key]}</span>}</label>)}</div><div className="mm-secure-note"><ShieldCheck size={20} /><span>Your card, phone, and delivery address are entered on Stripe’s secure checkout page.</span></div><button className="mm-button mm-button-primary" style={{ width: '100%', marginTop: '1.5rem' }} type="submit" disabled={processing} data-testid="button-place-order">{processing ? 'Opening secure payment…' : 'Continue to secure payment'} <ArrowRight size={16} /></button></form><Summary subtotal={subtotal} discount={discount} shipping={shipping} promo={promo} setPromo={setPromo} applyPromo={applyPromo} /></div></>;
 };
 
 export const ConfirmationPage = () => {
-  const [location, setLocation] = useLocation();
-  const order = sessionStorage.getItem('mimi-order');
-  const parsed = order ? JSON.parse(order) as { name: string; total: number; number: string } : null;
-  return <div className="mm-container mm-page">{parsed ? <div className="mm-order-confirmed mm-reveal"><div className="mm-confirm-mark"><Check size={34} /></div><div className="mm-eyebrow">The nicest kind of news</div><h1>It's on its way, {parsed.name}.</h1><p>Thank you for choosing a little magic. Your order <strong>{parsed.number}</strong> is tucked away and we’ll send a note when it begins its journey. Total: <strong>${parsed.total.toFixed(2)}</strong>.</p><Link href="/shop" className="mm-button mm-button-primary" data-testid="link-confirmation-shop">Keep exploring <ArrowRight size={16} /></Link></div> : <EmptyState title="No order here yet" body="Once you place an order, its happy ending will appear here." />}</div>;
+  const [location] = useLocation();
+  const { clearCart } = useStore();
+  const sessionId = new URLSearchParams(location.split('?')[1] || '').get('session_id');
+  const [order, setOrder] = useState<CheckoutStatus | null>(null);
+  const [loading, setLoading] = useState(Boolean(sessionId));
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+    getCheckoutSession(sessionId)
+      .then((result) => {
+        if (!active) return;
+        setOrder(result);
+        setLoading(false);
+        if (result.paymentStatus === 'paid' || result.paymentStatus === 'no_payment_required') {
+          clearCart();
+          sessionStorage.setItem('luna-belle-order', JSON.stringify(result));
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setFailed(true);
+        setLoading(false);
+      });
+    return () => { active = false; };
+  }, [sessionId, clearCart]);
+  if (loading) return <div className="mm-container mm-page"><div className="mm-order-confirmed"><div className="mm-confirm-mark"><ShieldCheck size={32} /></div><h1>Confirming your moonlit order…</h1><p>Stripe is securely confirming your payment.</p></div></div>;
+  if (failed) return <div className="mm-container mm-page"><ErrorState retry={() => window.location.reload()} /></div>;
+  const paid = order?.paymentStatus === 'paid' || order?.paymentStatus === 'no_payment_required';
+  return <div className="mm-container mm-page">{paid && order ? <div className="mm-order-confirmed mm-reveal"><div className="mm-confirm-mark"><Check size={34} /></div><div className="mm-eyebrow">The nicest kind of news</div><h1>It's on its way, {order.customerName.split(' ')[0]}.</h1><p>Thank you for choosing a little magic. Your order <strong>{order.orderNumber}</strong> is tucked away and we’ll send a note when it begins its journey. Total: <strong>{new Intl.NumberFormat('en-US', { style: 'currency', currency: order.currency.toUpperCase() }).format(order.amountTotal / 100)}</strong>.</p><Link href="/shop" className="mm-button mm-button-primary" data-testid="link-confirmation-shop">Keep exploring <ArrowRight size={16} /></Link></div> : <EmptyState title="No confirmed order here yet" body="Once Stripe confirms your payment, its happy ending will appear here." />}</div>;
 };

@@ -18,7 +18,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       <div className="mm-promo">Free shipping on orders over $120 · made for your everyday magic</div>
       <div className="mm-container mm-nav">
         <button className="mm-icon-button mm-mobile-toggle" onClick={() => setMenuOpen((open) => !open)} aria-label="Open menu" data-testid="button-mobile-menu">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
-        <Link href="/" className="mm-logo" data-testid="link-home"><span className="mm-logo-mark" /> Mimi &amp; Moon</Link>
+        <Link href="/" className="mm-logo" data-testid="link-home"><span className="mm-logo-mark" /> Luna Belle</Link>
         <nav className="mm-nav-links" aria-label="Main navigation">
           {nav.map((item) => <Link key={item.href} href={item.href} className={location === item.href ? 'active' : ''} data-testid={`link-nav-${item.label.toLowerCase().replace(' ', '-')}`}>{item.label}</Link>)}
         </nav>
@@ -36,10 +36,10 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     <main>{children}</main>
     <footer className="mm-footer">
       <div className="mm-container mm-footer-inner">
-        <Link href="/" className="mm-logo" data-testid="link-footer-home"><span className="mm-logo-mark" /> Mimi &amp; Moon</Link>
+        <Link href="/" className="mm-logo" data-testid="link-footer-home"><span className="mm-logo-mark" /> Luna Belle</Link>
         <div className="mm-footer-links"><Link href="/shop" data-testid="link-footer-shop">Shop all</Link><Link href="/collections" data-testid="link-footer-collections">Collections</Link><Link href="/about" data-testid="link-footer-about">The story</Link></div>
       </div>
-      <div className="mm-container mm-footer-note">Small-batch pieces for big little moments. © Mimi &amp; Moon.</div>
+      <div className="mm-container mm-footer-note">Small-batch pieces for big little moments. © Luna Belle.</div>
     </footer>
   </div>;
 };
